@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator Statistik Deskriptif</title>
+<style>
+  :root {
+    --kertas: #f5f7fb;
+    --garis: #d6dded;
+    --tinta: #1b2540;
+    --biru: #2f4bd8;
+    --biru-muda: #e3e8fc;
+    --abu: #5b6785;
+    --putih: #ffffff;
+    --merah: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--tinta);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    line-height: 1.55;
+    background-color: var(--kertas);
+    background-image:
+      linear-gradient(var(--garis) 1px, transparent 1px),
+      linear-gradient(90deg, var(--garis) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 40px 20px 64px; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.9rem, 5vw, 2.8rem); margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--abu); margin: 0 0 28px; max-width: 60ch; }
+  .panel { background: var(--putih); border: 1.5px solid var(--tinta); border-radius: 6px; padding: 20px; box-shadow: 5px 5px 0 var(--biru-muda); }
+  label { font-weight: 600; display: block; margin-bottom: 6px; }
+  textarea {
+    width: 100%; min-height: 110px; resize: vertical; padding: 12px;
+    font: 1rem/1.5 ui-monospace, Consolas, monospace;
+    border: 1.5px solid var(--garis); border-radius: 4px; color: var(--tinta);
+  }
+  textarea:focus, button:focus-visible { outline: 3px solid var(--biru); outline-offset: 2px; }
+  .hint { font-size: .9rem; color: var(--abu); margin: 6px 0 14px; }
+  .aksi { display: flex; flex-wrap: wrap; gap: 10px; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; padding: 10px 18px; border-radius: 4px;
+    border: 1.5px solid var(--tinta); background: var(--putih); color: var(--tinta);
+  }
+  button.utama { background: var(--biru); border-color: var(--biru); color: #fff; }
+  button:hover { filter: brightness(.95); }
+  #pesan { color: var(--merah); font-weight: 600; min-height: 1.5em; margin: 12px 0 0; }
+  #hasil { margin-top: 28px; }
+  #hasil[hidden] { display: none; }
+  h2 { font-family: Georgia, serif; font-size: 1.4rem; margin: 0 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .kartu { background: var(--putih); border: 1.5px solid var(--garis); border-left: 5px solid var(--biru); border-radius: 4px; padding: 10px 14px; }
+  .kartu dt { font-size: .9rem; color: var(--abu); }
+  .kartu dd { margin: 2px 0 0; font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; word-break: break-word; }
+  .data-urut { margin: 24px 0 0; }
+  .data-urut p { font-family: ui-monospace, Consolas, monospace; background: var(--putih); border: 1.5px solid var(--garis); border-radius: 4px; padding: 10px 12px; margin: 6px 0 0; overflow-wrap: anywhere; }
+  .frek { margin-top: 24px; }
+  .baris { display: grid; grid-template-columns: 70px 1fr 36px; align-items: center; gap: 10px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .batang { height: 18px; background: var(--biru); border-radius: 2px; min-width: 4px; }
+  footer { margin-top: 40px; color: var(--abu); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kalkulator Statistik Deskriptif</h1>
+  <p class="sub">Masukkan sekumpulan angka, lalu lihat ukuran pemusatan dan penyebaran datanya: rata-rata, median, modus, simpangan baku, dan lainnya.</p>
+
+  <section class="panel" aria-labelledby="lbl">
+    <label id="lbl" for="data">Data angka</label>
+    <textarea id="data" placeholder="Contoh: 70, 85, 90, 65, 85, 100"></textarea>
+    <p class="hint">Pisahkan dengan koma, spasi, titik koma, atau baris baru. Gunakan titik untuk desimal (contoh: 7.5).</p>
+    <div class="aksi">
+      <button class="utama" id="hitung" type="button">Hitung</button>
+      <button id="contoh" type="button">Isi data contoh</button>
+      <button id="reset" type="button">Hapus</button>
+    </div>
+    <p id="pesan" role="alert"></p>
+  </section>
+
+  <section id="hasil" hidden aria-live="polite">
+    <h2>Hasil perhitungan</h2>
+    <dl class="grid" id="kartu"></dl>
+
+    <div class="data-urut">
+      <strong>Data setelah diurutkan</strong>
+      <p id="urut"></p>
+    </div>
+
+    <div class="frek">
+      <strong>Frekuensi tiap nilai</strong>
+      <div id="frek"></div>
+    </div>
+  </section>
+
+  <footer>Dibuat untuk praktikum. Perhitungan berjalan di browser, tidak ada data yang dikirim ke server.</footer>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n).toLocaleString("id-ID", { maximumFractionDigits: 4 });
+
+  function median(arr) {
+    const m = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[m] : (arr[m - 1] + arr[m]) / 2;
+  }
+
+  function hitung(angka) {
+    const urut = [...angka].sort((a, b) => a - b);
+    const n = urut.length;
+    const jumlah = urut.reduce((s, x) => s + x, 0);
+    const rata = jumlah / n;
+    const ssq = urut.reduce((s, x) => s + (x - rata) ** 2, 0);
+
+    const frek = new Map();
+    urut.forEach((x) => frek.set(x, (frek.get(x) || 0) + 1));
+    const maks = Math.max(...frek.values());
+    const modus = maks === 1 ? "Tidak ada" : [...frek].filter(([, f]) => f === maks).map(([v]) => fmt(v)).join(", ");
+
+    const bawah = urut.slice(0, Math.floor(n / 2));
+    const atas = urut.slice(Math.ceil(n / 2));
+    const q1 = bawah.length ? median(bawah) : urut[0];
+    const q3 = atas.length ? median(atas) : urut[n - 1];
+
+    const varPop = ssq / n;
+    const varSam = n > 1 ? ssq / (n - 1) : null;
+
+    return {
+      urut, frek,
+      item: [
+        ["Banyak data (n)", n],
+        ["Jumlah", fmt(jumlah)],
+        ["Rata-rata (mean)", fmt(rata)],
+        ["Median", fmt(median(urut))],
+        ["Modus", modus],
+        ["Nilai minimum", fmt(urut[0])],
+        ["Nilai maksimum", fmt(urut[n - 1])],
+        ["Jangkauan (range)", fmt(urut[n - 1] - urut[0])],
+        ["Kuartil 1 (Q1)", fmt(q1)],
+        ["Kuartil 3 (Q3)", fmt(q3)],
+        ["Varians populasi", fmt(varPop)],
+        ["Varians sampel", varSam === null ? "-" : fmt(varSam)],
+        ["Simpangan baku populasi", fmt(Math.sqrt(varPop))],
+        ["Simpangan baku sampel", varSam === null ? "-" : fmt(Math.sqrt(varSam))],
+      ],
+    };
+  }
+
+  function tampilkan() {
+    const teks = $("data").value.trim();
+    const pesan = $("pesan");
+    pesan.textContent = "";
+    if (!teks) { pesan.textContent = "Data masih kosong. Ketik beberapa angka dulu."; return; }
+
+    const bagian = teks.split(/[\s,;]+/).filter(Boolean);
+    const salah = bagian.filter((b) => isNaN(Number(b)));
+    if (salah.length) {
+      pesan.textContent = "Ada yang bukan angka: " + salah.slice(0, 5).join(", ") + ". Periksa lagi datanya.";
+      $("hasil").hidden = true;
+      return;
+    }
+
+    const r = hitung(bagian.map(Number));
+
+    $("kartu").innerHTML = r.item
+      .map(([k, v]) => `<div class="kartu"><dt>${k}</dt><dd>${v}</dd></div>`)
+      .join("");
+    $("urut").textContent = r.urut.map(fmt).join(", ");
+
+    const baris = [...r.frek].slice(0, 15);
+    const maks = Math.max(...baris.map(([, f]) => f));
+    $("frek").innerHTML = baris
+      .map(([v, f]) => `<div class="baris"><span>${fmt(v)}</span><div class="batang" style="width:${(f / maks) * 100}%"></div><span>${f}×</span></div>`)
+      .join("") + (r.frek.size > 15 ? `<p class="hint">Menampilkan 15 nilai pertama dari ${r.frek.size} nilai berbeda.</p>` : "");
+
+    $("hasil").hidden = false;
+  }
+
+  $("hitung").addEventListener("click", tampilkan);
+  $("contoh").addEventListener("click", () => {
+    $("data").value = "70, 85, 90, 65, 85, 100, 78, 92, 85, 60";
+    tampilkan();
+  });
+  $("reset").addEventListener("click", () => {
+    $("data").value = "";
+    $("pesan").textContent = "";
+    $("hasil").hidden = true;
+    $("data").focus();
+  });
+</script>
+</body>
+</html>
