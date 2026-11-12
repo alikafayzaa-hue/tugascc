@@ -1,0 +1,180 @@
+/* ==========================================================
+   Kalkulator Statistik Deskriptif - script.js
+   Bagian: 1. Elemen  2. Fungsi bantu  3. Perhitungan
+           4. Tampilan  5. Event tombol
+   ========================================================== */
+
+/* ---------- 1. Ambil elemen dari HTML ---------- */
+const el = {
+  data: document.getElementById("data"),
+  pesan: document.getElementById("pesan"),
+  hasil: document.getElementById("hasil"),
+  kartu: document.getElementById("kartu"),
+  urut: document.getElementById("urut"),
+  frek: document.getElementById("frek"),
+  btnHitung: document.getElementById("btn-hitung"),
+  btnContoh: document.getElementById("btn-contoh"),
+  btnReset: document.getElementById("btn-reset"),
+};
+
+const DATA_CONTOH = "70, 85, 90, 65, 85, 100, 78, 92, 85, 60";
+const MAKS_BARIS_FREKUENSI = 15;
+
+/* ---------- 2. Fungsi bantu ---------- */
+
+// Format angka gaya Indonesia (koma desimal), maksimal 4 angka di belakang koma
+function format(angka) {
+  return Number(angka).toLocaleString("id-ID", { maximumFractionDigits: 4 });
+}
+
+// Median dari array yang SUDAH terurut
+function cariMedian(terurut) {
+  const tengah = Math.floor(terurut.length / 2);
+  return terurut.length % 2
+    ? terurut[tengah]
+    : (terurut[tengah - 1] + terurut[tengah]) / 2;
+}
+
+// Ubah teks input menjadi { angka, salah }
+function bacaInput(teks) {
+  const bagian = teks.split(/[\s,;]+/).filter(Boolean);
+  const salah = bagian.filter((b) => isNaN(Number(b)));
+  return { angka: bagian.map(Number), salah };
+}
+
+/* ---------- 3. Perhitungan statistik ---------- */
+
+// Hitung frekuensi tiap nilai -> Map { nilai => jumlah muncul }
+function hitungFrekuensi(terurut) {
+  const frekuensi = new Map();
+  terurut.forEach((x) => frekuensi.set(x, (frekuensi.get(x) || 0) + 1));
+  return frekuensi;
+}
+
+// Modus: nilai yang paling sering muncul (bisa lebih dari satu)
+function cariModus(frekuensi) {
+  const tertinggi = Math.max(...frekuensi.values());
+  if (tertinggi === 1) return "Tidak ada";
+  return [...frekuensi]
+    .filter(([, f]) => f === tertinggi)
+    .map(([nilai]) => format(nilai))
+    .join(", ");
+}
+
+// Kuartil 1 dan 3 (median dari separuh bawah dan separuh atas)
+function cariKuartil(terurut) {
+  const n = terurut.length;
+  const bawah = terurut.slice(0, Math.floor(n / 2));
+  const atas = terurut.slice(Math.ceil(n / 2));
+  return {
+    q1: bawah.length ? cariMedian(bawah) : terurut[0],
+    q3: atas.length ? cariMedian(atas) : terurut[n - 1],
+  };
+}
+
+// Gabungkan semua perhitungan
+function hitungStatistik(angka) {
+  const terurut = [...angka].sort((a, b) => a - b);
+  const n = terurut.length;
+  const jumlah = terurut.reduce((total, x) => total + x, 0);
+  const rata = jumlah / n;
+
+  // jumlah kuadrat selisih terhadap rata-rata
+  const jkSelisih = terurut.reduce((total, x) => total + (x - rata) ** 2, 0);
+  const varPopulasi = jkSelisih / n;
+  const varSampel = n > 1 ? jkSelisih / (n - 1) : null; // butuh minimal 2 data
+
+  const frekuensi = hitungFrekuensi(terurut);
+  const { q1, q3 } = cariKuartil(terurut);
+  const min = terurut[0];
+  const maks = terurut[n - 1];
+
+  const ringkasan = [
+    ["Banyak data (n)", n],
+    ["Jumlah", format(jumlah)],
+    ["Rata-rata (mean)", format(rata)],
+    ["Median", format(cariMedian(terurut))],
+    ["Modus", cariModus(frekuensi)],
+    ["Nilai minimum", format(min)],
+    ["Nilai maksimum", format(maks)],
+    ["Jangkauan (range)", format(maks - min)],
+    ["Kuartil 1 (Q1)", format(q1)],
+    ["Kuartil 3 (Q3)", format(q3)],
+    ["Varians populasi", format(varPopulasi)],
+    ["Varians sampel", varSampel === null ? "-" : format(varSampel)],
+    ["Simpangan baku populasi", format(Math.sqrt(varPopulasi))],
+    ["Simpangan baku sampel", varSampel === null ? "-" : format(Math.sqrt(varSampel))],
+  ];
+
+  return { terurut, frekuensi, ringkasan };
+}
+
+/* ---------- 4. Tampilan ---------- */
+
+function tampilkanKartu(ringkasan) {
+  el.kartu.innerHTML = ringkasan
+    .map(([nama, nilai]) => `<div class="kartu"><dt>${nama}</dt><dd>${nilai}</dd></div>`)
+    .join("");
+}
+
+function tampilkanFrekuensi(frekuensi) {
+  const baris = [...frekuensi].slice(0, MAKS_BARIS_FREKUENSI);
+  const tertinggi = Math.max(...baris.map(([, f]) => f));
+
+  let html = baris
+    .map(([nilai, f]) => `
+      <div class="baris">
+        <span>${format(nilai)}</span>
+        <div class="batang" style="width:${(f / tertinggi) * 100}%"></div>
+        <span>${f}×</span>
+      </div>`)
+    .join("");
+
+  if (frekuensi.size > MAKS_BARIS_FREKUENSI) {
+    html += `<p class="hint">Menampilkan ${MAKS_BARIS_FREKUENSI} nilai pertama dari ${frekuensi.size} nilai berbeda.</p>`;
+  }
+  el.frek.innerHTML = html;
+}
+
+function tampilkanError(teks) {
+  el.pesan.textContent = teks;
+  el.hasil.hidden = true;
+}
+
+/* ---------- 5. Alur utama & event tombol ---------- */
+
+function proses() {
+  el.pesan.textContent = "";
+  const teks = el.data.value.trim();
+
+  if (!teks) {
+    return tampilkanError("Data masih kosong. Ketik beberapa angka dulu.");
+  }
+
+  const { angka, salah } = bacaInput(teks);
+  if (salah.length) {
+    return tampilkanError(`Ada yang bukan angka: ${salah.slice(0, 5).join(", ")}. Periksa lagi datanya.`);
+  }
+
+  const hasil = hitungStatistik(angka);
+  tampilkanKartu(hasil.ringkasan);
+  el.urut.textContent = hasil.terurut.map(format).join(", ");
+  tampilkanFrekuensi(hasil.frekuensi);
+  el.hasil.hidden = false;
+}
+
+function isiContoh() {
+  el.data.value = DATA_CONTOH;
+  proses();
+}
+
+function reset() {
+  el.data.value = "";
+  el.pesan.textContent = "";
+  el.hasil.hidden = true;
+  el.data.focus();
+}
+
+el.btnHitung.addEventListener("click", proses);
+el.btnContoh.addEventListener("click", isiContoh);
+el.btnReset.addEventListener("click", reset);
