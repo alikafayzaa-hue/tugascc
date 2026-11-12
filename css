@@ -1,0 +1,211 @@
+/* ==========================================================
+   Kalkulator Statistik Deskriptif - style.css
+   Daftar isi: 1. Variabel  2. Dasar  3. Form  4. Hasil  5. Footer
+   ========================================================== */
+
+/* ---------- 1. Variabel warna (ubah di sini untuk ganti tema) ---------- */
+:root {
+  --kertas: #f5f7fb;
+  --garis: #d6dded;
+  --tinta: #1b2540;
+  --biru: #2f4bd8;
+  --biru-muda: #e3e8fc;
+  --abu: #5b6785;
+  --putih: #ffffff;
+  --merah: #b3261e;
+}
+
+/* ---------- 2. Dasar halaman ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--tinta);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  line-height: 1.55;
+
+  /* latar bermotif kertas grafik */
+  background-color: var(--kertas);
+  background-image:
+    linear-gradient(var(--garis) 1px, transparent 1px),
+    linear-gradient(90deg, var(--garis) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-family: Georgia, serif;
+  font-size: 1.4rem;
+}
+
+.sub {
+  max-width: 60ch;
+  margin: 0 0 28px;
+  color: var(--abu);
+}
+
+/* ---------- 3. Form input ---------- */
+.panel {
+  padding: 20px;
+  background: var(--putih);
+  border: 1.5px solid var(--tinta);
+  border-radius: 6px;
+  box-shadow: 5px 5px 0 var(--biru-muda);
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  resize: vertical;
+  color: var(--tinta);
+  font: 1rem/1.5 ui-monospace, Consolas, monospace;
+  border: 1.5px solid var(--garis);
+  border-radius: 4px;
+}
+
+.hint {
+  margin: 6px 0 14px;
+  color: var(--abu);
+  font-size: 0.9rem;
+}
+
+.aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 18px;
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  background: var(--putih);
+  border: 1.5px solid var(--tinta);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+button.utama {
+  color: #fff;
+  background: var(--biru);
+  border-color: var(--biru);
+}
+
+/* fokus keyboard yang jelas */
+textarea:focus,
+button:focus-visible {
+  outline: 3px solid var(--biru);
+  outline-offset: 2px;
+}
+
+#pesan {
+  min-height: 1.5em;
+  margin: 12px 0 0;
+  color: var(--merah);
+  font-weight: 600;
+}
+
+/* ---------- 4. Hasil ---------- */
+#hasil {
+  margin-top: 28px;
+}
+
+#hasil[hidden] {
+  display: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.kartu {
+  padding: 10px 14px;
+  background: var(--putih);
+  border: 1.5px solid var(--garis);
+  border-left: 5px solid var(--biru);
+  border-radius: 4px;
+}
+
+.kartu dt {
+  color: var(--abu);
+  font-size: 0.9rem;
+}
+
+.kartu dd {
+  margin: 2px 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.data-urut {
+  margin-top: 24px;
+}
+
+.data-urut p {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  background: var(--putih);
+  border: 1.5px solid var(--garis);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* grafik batang frekuensi */
+.frek {
+  margin-top: 24px;
+}
+
+.baris {
+  display: grid;
+  grid-template-columns: 70px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.batang {
+  height: 18px;
+  min-width: 4px;
+  background: var(--biru);
+  border-radius: 2px;
+}
+
+/* ---------- 5. Footer ---------- */
+footer {
+  margin-top: 40px;
+  color: var(--abu);
+  font-size: 0.9rem;
+}
